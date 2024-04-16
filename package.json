@@ -1,0 +1,13 @@
+{
+  "name": "@tejp/xmlp",
+  "version": "0.0.0",
+  "description": "Typescript XML parser (SAX and PullParser)",
+  "repository": "https://github.com/sth/xmlp.git",
+  "author": "Stephan Hohe <stephan@leo.org>",
+  "license": "MIT",
+  "main": "dist/mod.js",
+  "types": "dist/mod.d.ts",
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}

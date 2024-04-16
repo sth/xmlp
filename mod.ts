@@ -3,15 +3,15 @@
 export {
     SAXParser,
     PullParser,
-} from './parser.ts';
+} from './parser';
 
 export type {
     PullResult,
     SAXEvent,
-} from './parser.ts';
+} from './parser';
 
 export {
     AttributeInfo,
     ElementInfo,
     XMLParseError,
-} from './context.ts';
+} from './context';

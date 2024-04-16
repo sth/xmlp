@@ -1,10 +1,6 @@
 // Copyright 2020 Masataka Kurihara. All rights reserved. MIT license.
 
 import {
-    readableStreamFromReader,
- } from './deps.ts';
-
-import {
     XMLParseHandler,
     XMLParseContext,
     XMLParseEvent,
@@ -12,7 +8,7 @@ import {
     XMLLocator,
     XMLPosition,
     ElementInfo,
-} from './context.ts';
+} from './context';
 
 import {
     handleBeforeDocument,
@@ -39,7 +35,7 @@ import {
     handleEndTag,
     handleEndTagSawWhite,
     handleAfterDocument,
-} from './handler.ts';
+} from './handler';
 
 export abstract class ParserBase implements XMLLocator {
     private _cx = new XMLParseContext(this);
@@ -229,15 +225,14 @@ export class SAXParser extends ParserBase implements UnderlyingSink<Uint8Array> 
     /**
      * Convenient function. {@code SAXParser#getStream} is used internally.
      */
-    getWriter(): Deno.Writer {
+    getWriter(): WritableStream {
         const streamWriter = this.getStream().getWriter();
-        return {
-            async write(p: Uint8Array): Promise<number> {
+        return new WritableStream({
+            async write(p: Uint8Array): Promise<void> {
                 await streamWriter.ready;
                 await streamWriter.write(p);
-                return p.length;
             }
-        };
+        });
     }
 
     /**
@@ -245,7 +240,7 @@ export class SAXParser extends ParserBase implements UnderlyingSink<Uint8Array> 
      * @param source Target XML.
      * @param encoding When the source is Deno.Reader or Uint8Array, specify the encoding.
      */
-    async parse(source: Deno.Reader | Uint8Array | string, encoding?: string) {
+    async parse(source: ReadableStream | Uint8Array | string, encoding?: string) {
         this._encoding = encoding;
         if (typeof source === 'string') {
             this.chunk = source;
@@ -253,7 +248,7 @@ export class SAXParser extends ParserBase implements UnderlyingSink<Uint8Array> 
         } else if (source instanceof Uint8Array) {
             this.write(source);
         } else {
-            await readableStreamFromReader(source).pipeThrough(
+            await source.pipeThrough(
                 new TextDecoderStream(this._encoding),
             ).pipeTo(
                 new WritableStream<string>({ write: str => this.parse(str, encoding) }),
