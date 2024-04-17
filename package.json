@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "description": "Typescript XML parser (SAX and PullParser)",
   "repository": "https://github.com/sth/xmlp.git",
-  "author": "Stephan Hohe <stephan@leo.org>",
+  "author": "Stephan Hohe <sth.dev@tejp.de>",
   "license": "MIT",
   "main": "dist/mod.js",
   "types": "dist/mod.d.ts",
