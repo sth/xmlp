@@ -271,11 +271,7 @@ export class SAXParser extends ParserBase implements UnderlyingSink<Uint8Array> 
             this.write(source);
             this.close();
         } else {
-            await readableStreamFromReader(source).
-            //pipeThrough(
-            //    new TextDecoderStream(this._encoding),
-            //).
-            pipeTo(this.getStream());
+            await readableStreamFromReader(source).pipeTo(this.getStream());
         }
     }
 
