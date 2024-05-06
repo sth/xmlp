@@ -1,6 +1,10 @@
 // Copyright 2020 Masataka Kurihara. All rights reserved. MIT license.
 
 import {
+    readableStreamFromReader,
+ } from './deps.ts';
+
+import {
     assert,
     assertEquals,
     assertThrows,
@@ -19,6 +23,21 @@ import {
     PullParser,
     PullResult,
 } from './parser.ts';
+
+function byteChunksReader(bytes: Uint8Array): Deno.Reader {
+    let step = 0;
+    return {
+        async read(arr: Uint8Array): Promise<number | null> {
+            if (step < bytes.length) {
+                arr.set([bytes[step++]]);
+                return 1;
+            }
+            else {
+                return null;
+            }
+        }
+    };
+}
 
 Deno.test('ParserBase chunk & hasNext & readNext & position', () => {
     // protected -> public visiblity
@@ -73,6 +92,28 @@ Deno.test('SAXParser on & parse(Deno.Reader)', async () => {
     assertEquals(assertionCount, 3);
     assertEquals(elementCount, 18);
 });
+
+Deno.test('SAXParser UnderlyingSink chunks', async () => {
+    const parser = new SAXParser();
+
+    const input = (new TextEncoder()).encode("<x>ä</x>");
+    parser.on('text', (text) => {
+        assertEquals(text, "\u00E4");
+    });
+    await readableStreamFromReader(byteChunksReader(input)).pipeTo(new WritableStream(parser));
+});
+
+Deno.test('SAXParser parse(Deno.Reader) chunks', async () => {
+    const parser = new SAXParser();
+
+    const input = (new TextEncoder()).encode("<x>ä</x>");
+    parser.on('text', (text) => {
+        assertEquals(text, "\u00E4");
+    });
+
+    await parser.parse(byteChunksReader(input));
+});
+
 
 Deno.test('SAXParser parse(Uint8Array)', () => {
     const parser = new SAXParser();

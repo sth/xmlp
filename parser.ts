@@ -170,7 +170,12 @@ export class SAXParser extends ParserBase implements UnderlyingSink<Uint8Array> 
     // deno-lint-ignore no-explicit-any
     private _listeners: { [name: string]: ((...arg: any[]) => void)[] } = {};
     private _controller?: WritableStreamDefaultController;
-    private _encoding?: string;
+    private _decoder: TextDecoder;
+
+    constructor(encoding: string = "UTF-8") {
+        super();
+        this._decoder = new TextDecoder(encoding);
+    }
 
     protected fireListeners(event: XMLParseEvent) {
         const [name, ...args] = event;
@@ -196,7 +201,7 @@ export class SAXParser extends ParserBase implements UnderlyingSink<Uint8Array> 
         } catch(e) {
             if (e instanceof XMLParseError) {
                 this.fireListeners(['error', e]);
-                this._controller?.error(e);
+                this._controller.error(e);
             } else {
                 throw e;
             }
@@ -212,11 +217,16 @@ export class SAXParser extends ParserBase implements UnderlyingSink<Uint8Array> 
         try {
             this._controller = controller;
             // TextDecoder can resolve BOM.
-            this.chunk = new TextDecoder(this._encoding).decode(chunk);
+            this.chunk = this._decoder.decode(chunk, {stream: true});
             this.run();
         } finally {
             this._controller = undefined;
         }
+    }
+
+    close() {
+        this.chunk = this._decoder.decode(new Uint8Array(), {stream: false});
+        this.run();
     }
 
     /**
@@ -245,19 +255,18 @@ export class SAXParser extends ParserBase implements UnderlyingSink<Uint8Array> 
      * @param source Target XML.
      * @param encoding When the source is Deno.Reader or Uint8Array, specify the encoding.
      */
-    async parse(source: Deno.Reader | Uint8Array | string, encoding?: string) {
-        this._encoding = encoding;
+    async parse(source: Deno.Reader | Uint8Array | string, encoding?: string /** @deprecated Use constructor parameter instead */) {
+        if (encoding !== undefined) {
+            this._decoder = new TextDecoder(encoding);
+        }
         if (typeof source === 'string') {
             this.chunk = source;
             this.run();
         } else if (source instanceof Uint8Array) {
             this.write(source);
+            this.close();
         } else {
-            await readableStreamFromReader(source).pipeThrough(
-                new TextDecoderStream(this._encoding),
-            ).pipeTo(
-                new WritableStream<string>({ write: str => this.parse(str, encoding) }),
-            );
+            await readableStreamFromReader(source).pipeTo(this.getStream());
         }
     }
 
