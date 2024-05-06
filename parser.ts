@@ -201,12 +201,7 @@ export class SAXParser extends ParserBase implements UnderlyingSink<Uint8Array> 
         } catch(e) {
             if (e instanceof XMLParseError) {
                 this.fireListeners(['error', e]);
-                if (this._controller) {
-                    this._controller.error(e);
-                }
-                else {
-                    throw e;
-                }
+                this._controller.error(e);
             } else {
                 throw e;
             }
