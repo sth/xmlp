@@ -8,9 +8,15 @@ export class QName {
     constructor(qName: string) {
         this._qName = qName;
         const i = qName.indexOf(':');
-        const q = i < 0 ? [ '', qName ] : qName.split(':');
-        this._prefix = q[0];
-        this._localPart = q[1];
+        if (i < 0) {
+            this._prefix = '';
+            this._localPart = qName;
+        }
+        else {
+            const q = qName.split(':');
+            this._prefix = q[0];
+            this._localPart = q[1];
+        }
     }
 
     get qName(): string {
