@@ -1,6 +1,6 @@
 {
   "name": "@tejp/xmlp",
-  "version": "0.4.2",
+  "version": "0.4.3-experimental.1",
   "description": "Typescript XML parser (SAX and PullParser)",
   "repository": "https://github.com/sth/xmlp.git",
   "author": "Stephan Hohe <sth.dev@tejp.de>",
