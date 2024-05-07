@@ -222,10 +222,10 @@ function emitStartElement(cx: XMLParseContext): XMLParseEvent[] {
         events.push(['start_document']);
     }
     const element = cx.peekElement()!;
-    for (const { ns, uri } of element.prefixMappings) {
+    element.prefixMappings?.forEach(({ ns, uri }) => {
         cx.registerNamespace(ns, uri);
         events.push(['start_prefix_mapping', ns, uri]);
-    }
+    });
     // Setting Namespace URI to this element and all attributes.
     element.uri = cx.getNamespaceURI(element.prefix);
     for (const attribute of element.attributes) {
@@ -284,9 +284,9 @@ function emitEndElement(cx: XMLParseContext, qName: string): XMLParseEvent[] {
         throw new XMLParseError(`Illegal element structure, ${element.qName} & ${qName}`, cx);
     }
     events = [['end_element', new ElementInfo(element)]];
-    for(const { ns, uri } of element.prefixMappings) {
+    element.prefixMappings?.forEach(({ ns, uri }) => {
         events.push(['end_prefix_mapping', ns, uri]);
-    }
+    });
     return events;
 }
 

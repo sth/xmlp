@@ -47,6 +47,7 @@ export class Attribute extends QName {
 
 export class Element extends QName {
     private _attributes: Attribute[] = [];
+    private _xmlnsAttribute: boolean = false;
     private _parent?: Element;
 
     uri?: string;
@@ -64,6 +65,9 @@ export class Element extends QName {
     newAttribute(qName: string) {
         const attribute = new Attribute(qName);
         this._attributes.push(attribute);
+        if (attribute.prefix === 'xmlns') {
+            this._xmlnsAttribute = true;
+        }
     }
 
     peekAttribute(): Attribute | undefined {
@@ -78,7 +82,10 @@ export class Element extends QName {
         return this._attributes;
     }
 
-    get prefixMappings(): { ns: string, uri: string }[] {
+    get prefixMappings(): { ns: string, uri: string }[] | null {
+        if (!this._xmlnsAttribute) {
+            return null;
+        }
         const filterd = this._attributes.filter((attr) => (attr.prefix === 'xmlns'));
         return filterd.map((attr) => ({ ns: attr.localPart, uri: attr.value }));
     }
@@ -187,9 +194,9 @@ export class XMLParseContext {
 
     popElement(): Element | undefined {
         const element = this._elementStack.pop();
-        element?.prefixMappings.forEach(({ns}) => {
+        element?.prefixMappings?.forEach(({ns}) => {
             this._namespaces[ns] = undefined;
-        })
+        });
         return element;
     }
 
