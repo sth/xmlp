@@ -19,7 +19,7 @@ function isQuote(c: string): c is ('"' | '\'') {
 }
 
 export function resolveEntity(text: string): string {
-    return (
+    let result = (
         text
         .replaceAll('&amp;', '&')
         .replaceAll('&gt;', '>')
@@ -27,6 +27,19 @@ export function resolveEntity(text: string): string {
         .replaceAll('&quot;', '"')
         .replaceAll('&apos;', '\'')
     );
+    [
+        {
+            reg: /&#(\d{1,4});/g,
+            repl: (_: string, digits: string) => String.fromCodePoint(parseInt(digits, 10)),
+        },
+        {
+            reg: /&#x([\da-fA-F]{1,4});/g,
+            repl: (_: string, digits: string) => String.fromCodePoint(parseInt(digits, 16)),
+        },
+    ].forEach(({ reg, repl }) => {
+        result = result.replace(reg, repl);
+    });
+    return result;
 }
 
 // BEFORE_DOCUMENT; FOUND_LT, Error
