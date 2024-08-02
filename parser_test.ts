@@ -147,6 +147,27 @@ Deno.test('SAXParser self-closing end_document', () => {
     assertEquals(flag, true);
 });
 
+Deno.test('SAXParser entity resolution', () => {
+    const parser = new SAXParser();
+    let flag_text = false;
+    let flag_attr = false;
+	 parser.on('text', (text) => {
+        flag_text = true;
+        assertEquals(text, "text&text");
+    });
+	 parser.on('start_element', (element) => {
+        for (const attr of element.attributes) {
+            if (attr.qName == "attr") {
+                flag_attr = true;
+                assertEquals(attr.value, "attr&attr");
+            }
+        }
+    });
+    parser.parse('<xml attr="attr&amp;attr">text&amp;text</xml>');
+    assertEquals(flag_text, true);
+    assertEquals(flag_attr, true);
+});
+
 Deno.test('marshallEvent', () => {
     class TestParser extends PullParser {
         marshallEvent(event: XMLParseEvent): PullResult {

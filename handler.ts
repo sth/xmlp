@@ -29,6 +29,18 @@ export function resolveEntity(text: string): string {
     ].forEach(({ reg, ch }) => {
         result = result.replace(reg, ch);
     });
+    [
+        {
+            reg: /&#(\d{1,4});/g,
+            repl: (_: string, digits: string) => String.fromCodePoint(parseInt(digits, 10)),
+        },
+        {
+            reg: /&#x([\da-fA-F]{1,4});/g,
+            repl: (_: string, digits: string) => String.fromCodePoint(parseInt(digits, 16)),
+        },
+    ].forEach(({ reg, repl }) => {
+        result = result.replace(reg, repl);
+    });
     return result;
 }
 
