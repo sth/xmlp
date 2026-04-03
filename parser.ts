@@ -236,7 +236,7 @@ export class SAXParser extends ParserBase implements UnderlyingSink<Uint8Array> 
      * @param source Target XML.
      * @param encoding When the source is Deno.Reader or Uint8Array, specify the encoding.
      */
-    async parse(source: ReadableStream<unknown> | Uint8Array | string, encoding?: string /** @deprecated Use constructor parameter instead */) {
+    async parse(source: ReadableStream<Uint8Array> | Uint8Array | string, encoding?: string /** @deprecated Use constructor parameter instead */) {
         if (encoding !== undefined) {
             this._decoder = new TextDecoder(encoding);
         }
