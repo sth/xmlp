@@ -162,7 +162,7 @@ export interface SAXEvent {
 /**
  * SAX-style XML parser.
  */
-export class SAXParser extends ParserBase implements UnderlyingSink<Uint8Array> {
+export class SAXParser extends ParserBase implements UnderlyingSink<Uint8Array>, UnderlyingSink<string> {
     // deno-lint-ignore no-explicit-any
     private _listeners: { [name: string]: ((...arg: any[]) => void)[] } = {};
     private _controller?: WritableStreamDefaultController;
@@ -209,11 +209,16 @@ export class SAXParser extends ParserBase implements UnderlyingSink<Uint8Array> 
      * @param chunk XML data chunk
      * @param controller error reporter, Deno writable stream uses internal.
      */
-    write(chunk: Uint8Array, controller?: WritableStreamDefaultController) {
+    write(chunk: Uint8Array|string, controller?: WritableStreamDefaultController) {
         try {
             this._controller = controller;
             // TextDecoder can resolve BOM.
-            this.chunk = this._decoder.decode(chunk, {stream: true});
+            if (typeof chunk === 'string') {
+                this.chunk = chunk;
+            }
+            else {
+                this.chunk = this._decoder.decode(chunk, {stream: true});
+            }
             this.run();
         } finally {
             this._controller = undefined;
@@ -224,6 +229,8 @@ export class SAXParser extends ParserBase implements UnderlyingSink<Uint8Array> 
         try {
             this._controller = controller;
             // Process any remaining data still pending in `_decoder`
+            // Even if `_decoder` was unused because this parser processed strings,
+            // processing this empty chunk doesn't hurt
             this.chunk = this._decoder.decode(new Uint8Array(), {stream: false});
             this.run();
         } finally {
@@ -236,7 +243,7 @@ export class SAXParser extends ParserBase implements UnderlyingSink<Uint8Array> 
      * @param source Target XML.
      * @param encoding When the source is Deno.Reader or Uint8Array, specify the encoding.
      */
-    async parse(source: ReadableStream<Uint8Array> | Uint8Array | string, encoding?: string /** @deprecated Use constructor parameter instead */) {
+    async parse(source: ReadableStream<Uint8Array> | ReadableStream<string> | Uint8Array | string, encoding?: string /** @deprecated Use constructor parameter instead */) {
         if (encoding !== undefined) {
             this._decoder = new TextDecoder(encoding);
         }
@@ -247,8 +254,10 @@ export class SAXParser extends ParserBase implements UnderlyingSink<Uint8Array> 
             this.write(source);
             this.close();
         } else {
+            type ReadableStreamContent<T> = T extends ReadableStream<infer Content> ? Content : never;
+            type SourceStreamContent = ReadableStreamContent<typeof source>;
             await source.pipeTo(
-                new WritableStream<Uint8Array>(this),
+                new WritableStream<SourceStreamContent>(this),
             );
         }
     }
