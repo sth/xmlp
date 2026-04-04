@@ -212,11 +212,11 @@ export class SAXParser extends ParserBase implements UnderlyingSink<Uint8Array>,
     write(chunk: Uint8Array|string, controller?: WritableStreamDefaultController) {
         try {
             this._controller = controller;
-            // TextDecoder can resolve BOM.
             if (typeof chunk === 'string') {
                 this.chunk = chunk;
             }
             else {
+                // TextDecoder can resolve BOM.
                 this.chunk = this._decoder.decode(chunk, {stream: true});
             }
             this.run();
@@ -230,7 +230,7 @@ export class SAXParser extends ParserBase implements UnderlyingSink<Uint8Array>,
             this._controller = controller;
             // Process any remaining data still pending in `_decoder`
             // Even if `_decoder` was unused because this parser processed strings,
-            // processing this empty chunk doesn't hurt
+            // processing this empty chunk doesn't hurt.
             this.chunk = this._decoder.decode(new Uint8Array(), {stream: false});
             this.run();
         } finally {
