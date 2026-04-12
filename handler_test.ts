@@ -53,6 +53,9 @@ Deno.test('resolveEntity', () => {
     assertEquals(resolveEntity("n&ampx;p"), "n&ampx;p");
     assertEquals(resolveEntity("n&xamp;p"), "n&xamp;p");
     assertEquals(resolveEntity("n&;p"), "n&;p");
+
+    // No recursive decoding of entities
+    assertEquals(resolveEntity("&amp;lt;"), "&lt;");
 });
 
 Deno.test('handleBeforeDocument', () => {
