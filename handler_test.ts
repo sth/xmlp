@@ -42,6 +42,9 @@ Deno.test('resolveEntity', () => {
     assertEquals(resolveEntity('a&lt;b&gt;'), 'a<b>');
     assertEquals(resolveEntity('&quot;ab&quot;'), '"ab"');
     assertEquals(resolveEntity('&apos;ab&apos;'), '\'ab\'');
+    assertEquals(resolveEntity("a&#98;c"), "abc");
+    assertEquals(resolveEntity("j&#x6b;l"), "jkl");
+    assertEquals(resolveEntity("j&#x6B;l"), "jkl");
 });
 
 Deno.test('handleBeforeDocument', () => {
