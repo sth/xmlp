@@ -18,30 +18,43 @@ function isQuote(c: string): c is ('"' | '\'') {
     return c === '"' || c === '\'';
 }
 
+const simpleEntities = new Map<string, string>([
+    [ 'amp', '&' ],
+    [ 'gt', '>' ],
+    [ 'lt', '<' ],
+    [ 'quot', '"' ],
+    [ 'apos', '\'' ],
+]);
+const regexpEntities = [
+    {
+        regexp: /^#(\d{1,4})$/,
+        handler: (_: string, digits: string) => String.fromCodePoint(parseInt(digits, 10)),
+    },
+    {
+        regexp: /^#x([\da-fA-F]{1,4})$/,
+        handler: (_: string, digits: string) => String.fromCodePoint(parseInt(digits, 16)),
+    },
+];
+
 export function resolveEntity(text: string): string {
-    let result = text;
-    [
-        { reg: /&amp;/g, ch: '&' },
-        { reg: /&gt;/g, ch: '>' },
-        { reg: /&lt;/g, ch: '<' },
-        { reg: /&quot;/g, ch: '"' },
-        { reg: /&apos;/g, ch: '\'' },
-    ].forEach(({ reg, ch }) => {
-        result = result.replace(reg, ch);
+    return text.replace(/&([^;]*);/g, (complete: string, content: string) => {
+        // Named entities
+        const simpleValue = simpleEntities.get(content);
+        if (simpleValue !== undefined) {
+            return simpleValue;
+        }
+
+        // Numeric entities
+        for (const { regexp, handler } of regexpEntities) {
+            const match = content.match(regexp);
+            if (match !== null) {
+                return handler(match[0], match[1]);
+            }
+        }
+
+        // Unknown or invalid entities
+        return complete;
     });
-    [
-        {
-            reg: /&#(\d{1,4});/g,
-            repl: (_: string, digits: string) => String.fromCodePoint(parseInt(digits, 10)),
-        },
-        {
-            reg: /&#x([\da-fA-F]{1,4});/g,
-            repl: (_: string, digits: string) => String.fromCodePoint(parseInt(digits, 16)),
-        },
-    ].forEach(({ reg, repl }) => {
-        result = result.replace(reg, repl);
-    });
-    return result;
 }
 
 // BEFORE_DOCUMENT; FOUND_LT, Error
