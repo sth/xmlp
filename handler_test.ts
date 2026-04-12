@@ -45,6 +45,14 @@ Deno.test('resolveEntity', () => {
     assertEquals(resolveEntity("a&#98;c"), "abc");
     assertEquals(resolveEntity("j&#x6b;l"), "jkl");
     assertEquals(resolveEntity("j&#x6B;l"), "jkl");
+
+    // Unknown/invalid entities stay unchanged
+    assertEquals(resolveEntity("n&unknown;p"), "n&unknown;p");
+    assertEquals(resolveEntity("n&#123xyz;p"), "n&#123xyz;p");
+    assertEquals(resolveEntity("n&#x123xyz;p"), "n&#x123xyz;p");
+    assertEquals(resolveEntity("n&ampx;p"), "n&ampx;p");
+    assertEquals(resolveEntity("n&xamp;p"), "n&xamp;p");
+    assertEquals(resolveEntity("n&;p"), "n&;p");
 });
 
 Deno.test('handleBeforeDocument', () => {
