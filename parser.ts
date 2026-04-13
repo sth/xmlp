@@ -45,11 +45,13 @@ export abstract class ParserBase implements XMLLocator {
     private _position: XMLPosition = { line: 1, column: 0 };
 
     collectStart(): number {
-        return this._cx.collectStart(this._chunk, this._index);
+        // Start collection after current character
+        return this._cx.collectStart(this._chunk, this._index+1);
     }
 
     public collectEnd(startOffset: number): string {
-        return this._cx.collectEnd(this._index, startOffset);
+        // Stop collection after current character
+        return this._cx.collectEnd(startOffset, this._index+1);
     }
 
     /*
@@ -124,9 +126,9 @@ export abstract class ParserBase implements XMLLocator {
     }
 
     protected set chunk(chunk: string) {
-        this._cx.pushChunk(chunk);
         this._chunk = chunk;
         this._index = -1;
+        this._cx.collectAddChunk(chunk);
     }
 
     protected hasNext(): boolean {

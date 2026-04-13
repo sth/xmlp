@@ -143,9 +143,12 @@ export interface XMLLocator {
 
 class CollectionState {
     pending: number = 0;
-    currentChunkData: string = "";
-    prevChunkData: string = "";
-    currentChunkStart: number = 0;
+    data: string = "";
+    dataOffset: number = 0;
+
+    constructor(data: string = "") {
+        this.data = data;
+    }
 }
 
 export class XMLParseContext {
@@ -207,23 +210,20 @@ export class XMLParseContext {
         return this._namespaces[ns];
     }
 
-    collectStart(chunk: string, index: number): number {
+    collectStart(chunk: string, offset: number): number {
         if (this._collect === null) {
-            this._collect = new CollectionState();
-            this._collect.currentChunkData = chunk;
-            this._collect.currentChunkStart = index+1;
+            this._collect = new CollectionState(chunk);
         }
         this._collect.pending += 1;
-        const startOffset = this._collect.prevChunkData.length + (index+1 - this._collect.currentChunkStart);
+        const startOffset = this._collect.dataOffset + offset;
         return startOffset;
     }
 
-    collectEnd(index: number, startOffset: number): string {
+    collectEnd(startOffset: number, offset: number): string {
         if (this._collect === null) {
             throw new Error("collectEnd() without active collection");
         }
-        const collectedAll = this._collect.prevChunkData + this._collect.currentChunkData.substring(this._collect.currentChunkStart, index+1);
-        const collectedThis = collectedAll.substring(startOffset);
+        const collectedThis = this._collect.data.substring(startOffset, this._collect.dataOffset+offset);
         this._collect.pending -= 1;
         if (this._collect.pending === 0) {
             this._collect = null;
@@ -231,12 +231,10 @@ export class XMLParseContext {
         return collectedThis;
     }
 
-    pushChunk(chunk: string): void {
+    collectAddChunk(chunk: string): void {
         if (this._collect !== null) {
-            // Save previous chunk data
-            this._collect.prevChunkData += chunk;
-            // On the new chunk we collect from the beginning
-            this._collect.currentChunkStart = 0;
+            this._collect.dataOffset = this._collect.data.length;
+            this._collect.data += chunk;
         }
     }
 }
