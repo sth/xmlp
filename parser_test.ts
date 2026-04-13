@@ -225,6 +225,28 @@ Deno.test('SAXParser input collection', () => {
 	assertEquals(contents[2], 'pre<a attr="a">text</a><b>post</b></xml>');
 });
 
+Deno.test('SAXParser chunked input collection', async () => {
+	const parser = new SAXParser();
+	let tokens: number[] = [];
+	let contents: string[] = [];
+	parser.on('start_element', (element) => {
+		const token = parser.collectStart();
+		tokens.push(token);
+	});
+	parser.on('end_element', (element) => {
+		const token = tokens.pop();
+		assert(token !== undefined);
+		const content = parser.collectEnd(token);
+		contents.push(content);
+	});
+
+	await parser.parse(charChunkStream('<xml>pre<a attr="a">text</a><b>post</b></xml>'));
+
+	assertEquals(contents[0], 'text</a>');
+	assertEquals(contents[1], 'post</b>');
+	assertEquals(contents[2], 'pre<a attr="a">text</a><b>post</b></xml>');
+});
+
 Deno.test('marshallEvent', () => {
     class TestParser extends PullParser {
         override marshallEvent(event: XMLParseEvent): PullResult {
