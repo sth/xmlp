@@ -203,6 +203,74 @@ Deno.test('SAXParser entity resolution', () => {
     assertEquals(flag_attr, true);
 });
 
+Deno.test('SAXParser innerXML collection', () => {
+    const parser = new SAXParser();
+    const contents = new Map<string, string>();
+    parser.on('start_element', (element) => {
+        parser.collectInnerXML(element);
+    });
+    parser.on('inner_xml', (element, content) => {
+       contents.set(element.qName, content);
+    });
+
+    parser.parse(
+        `<xml>
+            <a>aaaa</a>
+            <b></b>
+            <c/>
+            <d>dd<e>ee</e>DD</d>
+            <f>ff<g/>FF</f>
+            <h>  <i attr="ii">  </i> </h>
+        </xml>`
+        );
+
+    assertEquals(contents.get('a'), 'aaaa');
+    assertEquals(contents.get('b'), '');
+    assert(!contents.has('c'));
+    assertEquals(contents.get('d'), 'dd<e>ee</e>DD');
+    assertEquals(contents.get('e'), 'ee');
+    assertEquals(contents.get('f'), 'ff<g/>FF');
+    assert(!contents.has('g'));
+    assertEquals(contents.get('h'), '  <i attr="ii">  </i> ');
+    assertEquals(contents.get('i'), '  ');
+    assert(contents.has('xml'));
+    assertEquals(contents.size, 8);
+});
+
+Deno.test('SAXParser innerXML collection with chunked data', async () => {
+    const parser = new SAXParser();
+    const contents = new Map<string, string>();
+    parser.on('start_element', (element) => {
+        parser.collectInnerXML(element);
+    });
+    parser.on('inner_xml', (element, content) => {
+        contents.set(element.qName, content);
+    });
+
+    await parser.parse(charChunkStream(
+        `<xml>
+            <a>aaaa</a>
+            <b></b>
+            <c/>
+            <d>dd<e>ee</e>DD</d>
+            <f>ff<g/>FF</f>
+            <h>  <i attr="ii">  </i> </h>
+        </xml>`
+        ));
+
+    assertEquals(contents.get('a'), 'aaaa');
+    assertEquals(contents.get('b'), '');
+    assert(!contents.has('c'));
+    assertEquals(contents.get('d'), 'dd<e>ee</e>DD');
+    assertEquals(contents.get('e'), 'ee');
+    assertEquals(contents.get('f'), 'ff<g/>FF');
+    assert(!contents.has('g'));
+    assertEquals(contents.get('h'), '  <i attr="ii">  </i> ');
+    assertEquals(contents.get('i'), '  ');
+    assert(contents.has('xml'));
+    assertEquals(contents.size, 8);
+});
+
 Deno.test('marshallEvent', () => {
     class TestParser extends PullParser {
         override marshallEvent(event: XMLParseEvent): PullResult {

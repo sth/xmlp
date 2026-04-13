@@ -44,6 +44,11 @@ export abstract class ParserBase implements XMLLocator {
     private _index = -1;
     private _position: XMLPosition = { line: 1, column: 0 };
 
+    collectInnerXML(element: ElementInfo): void {
+        // Start collection after current character
+        this._cx.collectInnerXMLStart(element, this._chunk, this._index+1);
+    }
+
     /*
         The basic logic of this XML parser was obtained by reading the source code of sax-js.
         Thanks & see: https://github.com/isaacs/sax-js
@@ -118,6 +123,7 @@ export abstract class ParserBase implements XMLLocator {
     protected set chunk(chunk: string) {
         this._chunk = chunk;
         this._index = -1;
+        this._cx.innerXML?.addChunk(chunk);
     }
 
     protected hasNext(): boolean {
@@ -133,6 +139,7 @@ export abstract class ParserBase implements XMLLocator {
         } else {
             this._position.column += 1;
         }
+        this._cx.innerXML?.advance();
         return c;
     }
 
@@ -156,6 +163,7 @@ export interface SAXEvent {
     end_element: (element: ElementInfo) => void;
     end_prefix_mapping: (ns: string, uri: string) => void;
     end_document: () => void;
+    inner_xml: (element: ElementInfo, content: string) => void;
     error: (error: XMLParseError) => void;
 }
 

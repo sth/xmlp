@@ -305,6 +305,16 @@ export function handleStartTagStuff(cx: XMLParseContext, c: string): XMLParseEve
     return events;
 }
 
+function emitInnerXML(cx: XMLParseContext): XMLParseEvent[] {
+    let events: XMLParseEvent[] = [];
+    const element = cx.peekElement()!;
+    if (element.innerXMLToken !== null) {
+        const content = cx.collectInnerXMLComplete(element.innerXMLToken);
+        events = [['inner_xml', new ElementInfo(element), content]];
+    }
+    return events;
+}
+
 function emitEndElement(cx: XMLParseContext, qName: string): XMLParseEvent[] {
     let events: XMLParseEvent[] = [];
     const element = cx.popElement()!;
@@ -412,7 +422,7 @@ export function handleAttributeValueEnd(cx: XMLParseContext, c: string): XMLPars
 }
 
 function closeElement(cx: XMLParseContext): XMLParseEvent[] {
-    const events = emitEndElement(cx, cx.memento);
+    const events = emitInnerXML(cx).concat(emitEndElement(cx, cx.memento));
     cx.clearMemento();
     if (cx.elementLength === 0) {
         events.push(['end_document']);

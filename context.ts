@@ -39,9 +39,19 @@ export class Attribute extends QName {
     }
 }
 
+class InnerXMLToken {
+    readonly startOffset: number;
+
+    constructor(startOffset: number) {
+        this.startOffset = startOffset;
+    }
+}
+
 export class Element extends QName {
     private _attributes: Attribute[] = [];
     private _parent?: Element;
+
+    innerXMLToken: InnerXMLToken | null = null;
 
     uri?: string;
     emptyElement = false;
@@ -141,11 +151,31 @@ export interface XMLLocator {
     position: XMLPosition;
 }
 
+class InnerXMLState {
+    pending: number = 0;
+    data: string;
+    dataIndex: number;
+
+    constructor(data: string, dataIndex: number) {
+        this.data = data;
+        this.dataIndex = dataIndex;
+    }
+
+    addChunk(chunk: string) {
+        this.data += chunk;
+    }
+
+    advance() {
+        this.dataIndex += 1;
+    }
+}
+
 export class XMLParseContext {
     private _locator?: XMLLocator;
     private _memento = '';
     private _elementStack: Element[] = [];
     private _namespaces: { [ns: string]: string | undefined } = {};
+    private _innerXML: InnerXMLState | null = null;
 
     quote: '' | '"' | '\'' = '';
     state = 'BEFORE_DOCUMENT';
@@ -197,6 +227,50 @@ export class XMLParseContext {
 
     getNamespaceURI(ns: string): string | undefined {
         return this._namespaces[ns];
+    }
+
+    get innerXML(): InnerXMLState | null {
+        return this._innerXML;
+    }
+
+    collectInnerXMLStart(element: ElementInfo, chunk: string, index: number) {
+        if (element.emptyElement) {
+            // Self-closing elements don't have innerXML
+            return;
+        }
+        if (this._innerXML === null) {
+            this._innerXML = new InnerXMLState(chunk, index);
+        }
+        const parserElement = this.peekElement();
+        if (parserElement === undefined) {
+            throw new Error('No current element');
+        }
+        // TODO: Make sure `parserElement` is `element._element`.
+        if (parserElement.innerXMLToken !== null) {
+            // Already collecting, ignore duplicate call
+            return;
+        }
+        this._innerXML.pending += 1;
+        parserElement.innerXMLToken = new InnerXMLToken(this._innerXML.dataIndex);
+    }
+
+    collectInnerXMLComplete(token: InnerXMLToken): string {
+        if (this._innerXML === null) {
+            throw new Error("collectInnerXMLComplete() without active collection");
+        }
+        // At the current position `this._innerXML.dataIndex` we have already read
+        // the closing tag. That tag shouldn't be incuded in innerXML and we have
+        // to remove it.
+        const closingTagStart = this._innerXML.data.lastIndexOf('<', this._innerXML.dataIndex);
+        if (closingTagStart < token.startOffset) {
+            throw new XMLParseError(`Closing tag missing in innerXML fragment: ${this._innerXML.data.substring(token.startOffset, this._innerXML.dataIndex)}`, this);
+        }
+        const collected = this._innerXML.data.substring(token.startOffset, closingTagStart);
+        this._innerXML.pending -= 1;
+        if (this._innerXML.pending === 0) {
+            this._innerXML = null;
+        }
+        return collected;
     }
 }
 
