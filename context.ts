@@ -141,11 +141,19 @@ export interface XMLLocator {
     position: XMLPosition;
 }
 
+class CollectionState {
+    pending: number = 0;
+    currentChunkData: string = "";
+    prevChunkData: string = "";
+    currentChunkStart: number = 0;
+}
+
 export class XMLParseContext {
     private _locator?: XMLLocator;
     private _memento = '';
     private _elementStack: Element[] = [];
     private _namespaces: { [ns: string]: string | undefined } = {};
+    private _collect: CollectionState | null = null;
 
     quote: '' | '"' | '\'' = '';
     state = 'BEFORE_DOCUMENT';
@@ -197,6 +205,39 @@ export class XMLParseContext {
 
     getNamespaceURI(ns: string): string | undefined {
         return this._namespaces[ns];
+    }
+
+    collectStart(chunk: string, index: number): number {
+        if (this._collect === null) {
+            this._collect = new CollectionState();
+            this._collect.currentChunkData = chunk;
+            this._collect.currentChunkStart = index+1;
+        }
+        this._collect.pending += 1;
+        const startOffset = this._collect.prevChunkData.length + (index+1 - this._collect.currentChunkStart);
+        return startOffset;
+    }
+
+    collectEnd(index: number, startOffset: number): string {
+        if (this._collect === null) {
+            throw new Error("collectEnd() without active collection");
+        }
+        const collectedAll = this._collect.prevChunkData + this._collect.currentChunkData.substring(this._collect.currentChunkStart, index+1);
+        const collectedThis = collectedAll.substring(startOffset);
+        this._collect.pending -= 1;
+        if (this._collect.pending === 0) {
+            this._collect = null;
+        }
+        return collectedThis;
+    }
+
+    pushChunk(chunk: string): void {
+        if (this._collect !== null) {
+            // Save previous chunk data
+            this._collect.prevChunkData += chunk;
+            // On the new chunk we collect from the beginning
+            this._collect.currentChunkStart = 0;
+        }
     }
 }
 

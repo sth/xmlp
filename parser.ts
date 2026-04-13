@@ -37,12 +37,6 @@ import {
     handleAfterDocument,
 } from './handler.ts';
 
-class CollectionState {
-    pending: number = 0;
-    prevChunkData: string = "";
-    currentChunkStart: number = 0;
-}
-
 export abstract class ParserBase implements XMLLocator {
     private _cx = new XMLParseContext(this);
     private _handlers: { [state: string]: XMLParseHandler } = {};
@@ -50,29 +44,12 @@ export abstract class ParserBase implements XMLLocator {
     private _index = -1;
     private _position: XMLPosition = { line: 1, column: 0 };
 
-    private _collect: CollectionState | null = null;
-
-    public collectStart(): number {
-        if (this._collect === null) {
-            this._collect = new CollectionState();
-            this._collect.currentChunkStart = this._index+1;
-        }
-        this._collect.pending += 1;
-        const startOffset = this._collect.prevChunkData.length + (this._index+1 - this._collect.currentChunkStart);
-        return startOffset;
+    collectStart(): number {
+        return this._cx.collectStart(this._chunk, this._index);
     }
 
     public collectEnd(startOffset: number): string {
-        if (this._collect === null) {
-            throw new Error("collectEnd() without active collection");
-        }
-        const collectedAll = this._collect.prevChunkData + this._chunk.substring(this._collect.currentChunkStart, this._index+1);
-        const collectedThis = collectedAll.substring(startOffset);
-        this._collect.pending -= 1;
-        if (this._collect.pending === 0) {
-            this._collect = null;
-        }
-        return collectedThis;
+        return this._cx.collectEnd(this._index, startOffset);
     }
 
     /*
@@ -147,12 +124,7 @@ export abstract class ParserBase implements XMLLocator {
     }
 
     protected set chunk(chunk: string) {
-        if (this._collect !== null) {
-            // Save previous chunk data
-            this._collect.prevChunkData += this._chunk;
-            // On the new chunk we collect from the beginning
-            this._collect.currentChunkStart = 0;
-        }
+        this._cx.pushChunk(chunk);
         this._chunk = chunk;
         this._index = -1;
     }
