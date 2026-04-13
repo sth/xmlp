@@ -8,6 +8,7 @@ import {
 
 import {
     ElementInfo,
+    CollectionToken,
     XMLParseContext,
     XMLParseEvent,
     XMLParseError,
@@ -205,8 +206,8 @@ Deno.test('SAXParser entity resolution', () => {
 
 Deno.test('SAXParser input collection', () => {
 	const parser = new SAXParser();
-	let tokens: number[] = [];
-	let contents: string[] = [];
+	const tokens: CollectionToken[] = [];
+	const contents: string[] = [];
 	parser.on('start_element', (element) => {
 		const token = parser.collectStart();
 		tokens.push(token);
@@ -227,8 +228,8 @@ Deno.test('SAXParser input collection', () => {
 
 Deno.test('SAXParser chunked input collection', async () => {
 	const parser = new SAXParser();
-	let tokens: number[] = [];
-	let contents: string[] = [];
+	const tokens: CollectionToken[] = [];
+	const contents: string[] = [];
 	parser.on('start_element', (element) => {
 		const token = parser.collectStart();
 		tokens.push(token);

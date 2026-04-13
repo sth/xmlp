@@ -151,6 +151,14 @@ class CollectionState {
     }
 }
 
+export class CollectionToken {
+    readonly startOffset: number;
+
+    constructor(startOffset: number) {
+        this.startOffset = startOffset;
+    }
+}
+
 export class XMLParseContext {
     private _locator?: XMLLocator;
     private _memento = '';
@@ -210,20 +218,20 @@ export class XMLParseContext {
         return this._namespaces[ns];
     }
 
-    collectStart(chunk: string, offset: number): number {
+    collectStart(chunk: string, index: number): CollectionToken {
         if (this._collect === null) {
             this._collect = new CollectionState(chunk);
         }
         this._collect.pending += 1;
-        const startOffset = this._collect.dataOffset + offset;
-        return startOffset;
+        const dataIndex = this._collect.dataOffset + index;
+        return new CollectionToken(dataIndex);
     }
 
-    collectEnd(startOffset: number, offset: number): string {
+    collectEnd(token: CollectionToken, index: number): string {
         if (this._collect === null) {
             throw new Error("collectEnd() without active collection");
         }
-        const collectedThis = this._collect.data.substring(startOffset, this._collect.dataOffset+offset);
+        const collectedThis = this._collect.data.substring(token.startOffset, this._collect.dataOffset+index);
         this._collect.pending -= 1;
         if (this._collect.pending === 0) {
             this._collect = null;

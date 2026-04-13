@@ -8,6 +8,7 @@ import {
     XMLLocator,
     XMLPosition,
     ElementInfo,
+    CollectionToken,
 } from './context.ts';
 
 import {
@@ -44,14 +45,14 @@ export abstract class ParserBase implements XMLLocator {
     private _index = -1;
     private _position: XMLPosition = { line: 1, column: 0 };
 
-    collectStart(): number {
+    collectStart(): CollectionToken {
         // Start collection after current character
         return this._cx.collectStart(this._chunk, this._index+1);
     }
 
-    public collectEnd(startOffset: number): string {
+    public collectEnd(token: CollectionToken): string {
         // Stop collection after current character
-        return this._cx.collectEnd(startOffset, this._index+1);
+        return this._cx.collectEnd(token, this._index+1);
     }
 
     /*
