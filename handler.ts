@@ -305,6 +305,21 @@ export function handleStartTagStuff(cx: XMLParseContext, c: string): XMLParseEve
     return events;
 }
 
+function emitInnerXML(cx: XMLParseContext): XMLParseEvent[] {
+    let events: XMLParseEvent[] = [];
+    const element = cx.peekElement()!;
+    if (element.innerXMLToken !== null) {
+        const collected = cx.collectEnd(element.innerXMLToken);
+        // `collected` contains the closing tag, which needs to be removed
+        const closingTagStart = collected.lastIndexOf('<');
+        if (closingTagStart === -1) {
+            throw new XMLParseError(`Closing tag missing in innerXML fragment: ${collected}`, cx);
+        }
+        events = [['inner_xml', new ElementInfo(element), collected.substring(0, closingTagStart)]];
+    }
+    return events;
+}
+
 function emitEndElement(cx: XMLParseContext, qName: string): XMLParseEvent[] {
     let events: XMLParseEvent[] = [];
     const element = cx.popElement()!;
@@ -412,7 +427,7 @@ export function handleAttributeValueEnd(cx: XMLParseContext, c: string): XMLPars
 }
 
 function closeElement(cx: XMLParseContext): XMLParseEvent[] {
-    const events = emitEndElement(cx, cx.memento);
+    const events = emitInnerXML(cx).concat(emitEndElement(cx, cx.memento));
     cx.clearMemento();
     if (cx.elementLength === 0) {
         events.push(['end_document']);

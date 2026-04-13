@@ -206,46 +206,38 @@ Deno.test('SAXParser entity resolution', () => {
 
 Deno.test('SAXParser input collection', () => {
 	const parser = new SAXParser();
-	const tokens: CollectionToken[] = [];
-	const contents: string[] = [];
+	const contents = new Map<string, string>();
 	parser.on('start_element', (element) => {
-		const token = parser.collectStart();
-		tokens.push(token);
+		parser.collectInnerXML(element);
 	});
-	parser.on('end_element', (element) => {
-		const token = tokens.pop();
-		assert(token !== undefined);
-		const content = parser.collectEnd(token);
-		contents.push(content);
+   parser.on('inner_xml', (element, content) => {
+       contents.set(element.qName, content);
 	});
 
-	parser.parse('<xml>pre<a attr="a">text</a><b>post</b></xml>');
+	parser.parse('<xml>111<a attr="a">222<b>333</b></a><c/>444</xml>');
 
-	assertEquals(contents[0], 'text</a>');
-	assertEquals(contents[1], 'post</b>');
-	assertEquals(contents[2], 'pre<a attr="a">text</a><b>post</b></xml>');
+	assertEquals(contents.get('a'), '222<b>333</b>');
+	assertEquals(contents.get('b'), '333');
+	assertEquals(contents.get('xml'), '111<a attr="a">222<b>333</b></a><c/>444');
+   assertEquals(contents.size, 3);
 });
 
 Deno.test('SAXParser chunked input collection', async () => {
 	const parser = new SAXParser();
-	const tokens: CollectionToken[] = [];
-	const contents: string[] = [];
+	const contents = new Map<string, string>();
 	parser.on('start_element', (element) => {
-		const token = parser.collectStart();
-		tokens.push(token);
+		parser.collectInnerXML(element);
 	});
-	parser.on('end_element', (element) => {
-		const token = tokens.pop();
-		assert(token !== undefined);
-		const content = parser.collectEnd(token);
-		contents.push(content);
+   parser.on('inner_xml', (element, content) => {
+       contents.set(element.qName, content);
 	});
 
-	await parser.parse(charChunkStream('<xml>pre<a attr="a">text</a><b>post</b></xml>'));
+	await parser.parse(charChunkStream('<xml>111<a attr="a">222<b>333</b></a><c/>444</xml>'));
 
-	assertEquals(contents[0], 'text</a>');
-	assertEquals(contents[1], 'post</b>');
-	assertEquals(contents[2], 'pre<a attr="a">text</a><b>post</b></xml>');
+	assertEquals(contents.get('a'), '222<b>333</b>');
+	assertEquals(contents.get('b'), '333');
+	assertEquals(contents.get('xml'), '111<a attr="a">222<b>333</b></a><c/>444');
+   assertEquals(contents.size, 3);
 });
 
 Deno.test('marshallEvent', () => {

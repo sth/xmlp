@@ -45,14 +45,9 @@ export abstract class ParserBase implements XMLLocator {
     private _index = -1;
     private _position: XMLPosition = { line: 1, column: 0 };
 
-    collectStart(): CollectionToken {
+    collectInnerXML(element: ElementInfo): void {
         // Start collection after current character
-        return this._cx.collectStart(this._chunk, this._index+1);
-    }
-
-    public collectEnd(token: CollectionToken): string {
-        // Stop collection after current character
-        return this._cx.collectEnd(token, this._index+1);
+        this._cx.collectInnerXMLStart(element, this._chunk, this._index+1);
     }
 
     /*
@@ -145,6 +140,7 @@ export abstract class ParserBase implements XMLLocator {
         } else {
             this._position.column += 1;
         }
+        this._cx.collectNext();
         return c;
     }
 
@@ -168,6 +164,7 @@ export interface SAXEvent {
     end_element: (element: ElementInfo) => void;
     end_prefix_mapping: (ns: string, uri: string) => void;
     end_document: () => void;
+    inner_xml: (element: ElementInfo, content: string) => void;
     error: (error: XMLParseError) => void;
 }
 

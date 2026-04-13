@@ -43,6 +43,8 @@ export class Element extends QName {
     private _attributes: Attribute[] = [];
     private _parent?: Element;
 
+    innerXMLToken: CollectionToken | null = null;
+
     uri?: string;
     emptyElement = false;
 
@@ -143,11 +145,12 @@ export interface XMLLocator {
 
 class CollectionState {
     pending: number = 0;
-    data: string = "";
-    dataOffset: number = 0;
+    data: string;
+    dataIndex: number;
 
-    constructor(data: string = "") {
+    constructor(data: string, dataIndex: number) {
         this.data = data;
+        this.dataIndex = dataIndex;
     }
 }
 
@@ -218,20 +221,31 @@ export class XMLParseContext {
         return this._namespaces[ns];
     }
 
-    collectStart(chunk: string, index: number): CollectionToken {
+    collectInnerXMLStart(element_: ElementInfo, chunk: string, index: number) {
+        if (element_.emptyElement) {
+            // Self-closing elements don't have innerXML
+            return;
+        }
         if (this._collect === null) {
-            this._collect = new CollectionState(chunk);
+            this._collect = new CollectionState(chunk, index);
+        }
+        const parserElement = this.peekElement();
+        if (parserElement === undefined) {
+            throw new Error('No current element');
+        }
+        if (parserElement.innerXMLToken !== null) {
+            // Already collecting, ignore duplicate call
+            return;
         }
         this._collect.pending += 1;
-        const dataIndex = this._collect.dataOffset + index;
-        return new CollectionToken(dataIndex);
+        parserElement.innerXMLToken = new CollectionToken(this._collect.dataIndex);
     }
 
-    collectEnd(token: CollectionToken, index: number): string {
+    collectEnd(token: CollectionToken): string {
         if (this._collect === null) {
             throw new Error("collectEnd() without active collection");
         }
-        const collectedThis = this._collect.data.substring(token.startOffset, this._collect.dataOffset+index);
+        const collectedThis = this._collect.data.substring(token.startOffset, this._collect.dataIndex);
         this._collect.pending -= 1;
         if (this._collect.pending === 0) {
             this._collect = null;
@@ -241,9 +255,15 @@ export class XMLParseContext {
 
     collectAddChunk(chunk: string): void {
         if (this._collect !== null) {
-            this._collect.dataOffset = this._collect.data.length;
             this._collect.data += chunk;
         }
+    }
+
+    collectNext() {
+        if (this._collect === null) {
+            return;
+        }
+        this._collect.dataIndex += 1;
     }
 }
 
