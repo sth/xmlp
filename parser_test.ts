@@ -271,6 +271,16 @@ Deno.test('SAXParser innerXML collection with chunked data', async () => {
     assertEquals(contents.size, 8);
 });
 
+Deno.test('SAXParser white space handling', () => {
+    const parser = new SAXParser();
+    const expectedTexts = [' ', ' a ', '  ', '   '];
+    parser.on('text', (text) => {
+        assertEquals(text, expectedTexts.shift());
+    });
+    parser.parse('<xml> <a> a </a>  <b/>   </xml>');
+    assertEquals(expectedTexts.length, 0);
+});
+
 Deno.test('marshallEvent', () => {
     class TestParser extends PullParser {
         override marshallEvent(event: XMLParseEvent): PullResult {
@@ -303,7 +313,9 @@ Deno.test('PullParser', async () => {
     assertEquals(events.next().value, { name: 'start_prefix_mapping', ns: 'atom', uri: 'http://www.w3.org/2005/Atom' });
     assertEquals(events.next().value, { name: 'start_prefix_mapping', ns: 'm', uri: 'https://xmlp.test/m' });
     assertEquals((events.next().value as PullResult).element!.qName, 'rss');
+    assertEquals((events.next().value as PullResult).text!.trim(), '');
     assertEquals((events.next().value as PullResult).element!.qName, 'channel');
+    assertEquals((events.next().value as PullResult).text!.trim(), '');
     assertEquals((events.next().value as PullResult).element!.qName, 'title');
     assertEquals((events.next().value as PullResult).text, 'XML Parser for Deno');
     assertEquals((events.next().value as PullResult).name, 'end_element');

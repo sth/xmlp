@@ -82,7 +82,7 @@ export function handleGeneralStuff(cx: XMLParseContext, c: string): XMLParseEven
 // FOUND_LT; SGML_DECL, START_TAG, END_TAG, PROC_INST, Error
 export function handleFoundLT(cx: XMLParseContext, c: string): XMLParseEvent[] {
     let events: XMLParseEvent[] = [];
-    const text = resolveEntity(cx.memento).trim();
+    const text = resolveEntity(cx.memento);
     cx.clearMemento();
     if (text) {
         events = [['text', text, new ElementInfo(cx.peekElement()!), false]];
