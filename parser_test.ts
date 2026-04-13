@@ -214,12 +214,28 @@ Deno.test('SAXParser input collection', () => {
        contents.set(element.qName, content);
     });
 
-    parser.parse('<xml>111<a attr="a">222<b>333</b></a><c/>444</xml>');
+    parser.parse(
+        `<xml>
+            <a>aaaa</a>
+            <b></b>
+            <c/>
+            <d>dd<e>ee</e>DD</d>
+            <f>ff<g/>FF</f>
+            <h>  <i attr="ii">  </i> </h>
+        </xml>`
+        );
 
-    assertEquals(contents.get('a'), '222<b>333</b>');
-    assertEquals(contents.get('b'), '333');
-    assertEquals(contents.get('xml'), '111<a attr="a">222<b>333</b></a><c/>444');
-    assertEquals(contents.size, 3);
+    assertEquals(contents.get('a'), 'aaaa');
+    assertEquals(contents.get('b'), '');
+    assert(!contents.has('c'));
+    assertEquals(contents.get('d'), 'dd<e>ee</e>DD');
+    assertEquals(contents.get('e'), 'ee');
+    assertEquals(contents.get('f'), 'ff<g/>FF');
+    assert(!contents.has('g'));
+    assertEquals(contents.get('h'), '  <i attr="ii">  </i> ');
+    assertEquals(contents.get('i'), '  ');
+    assert(contents.has('xml'));
+    assertEquals(contents.size, 8);
 });
 
 Deno.test('SAXParser chunked input collection', async () => {
@@ -232,16 +248,28 @@ Deno.test('SAXParser chunked input collection', async () => {
         contents.set(element.qName, content);
     });
 
-    await parser.parse(charChunkStream('<xml>111<a attr="a">222<b>333</b></a><c/>444</xml>'));
+    await parser.parse(charChunkStream(
+        `<xml>
+            <a>aaaa</a>
+            <b></b>
+            <c/>
+            <d>dd<e>ee</e>DD</d>
+            <f>ff<g/>FF</f>
+            <h>  <i attr="ii">  </i> </h>
+        </xml>`
+        ));
 
-    assertEquals(contents.get('a'), '222<b>333</b>');
-    assertEquals(contents.get('b'), '333');
-    assertEquals(contents.get('xml'), '111<a attr="a">222<b>333</b></a><c/>444');
-    assertEquals(contents.size, 3);
-
-    assertEquals(contents[0], 'text');
-    assertEquals(contents[1], 'post');
-    assertEquals(contents[2], 'pre<a attr="a">text</a><b>post</b>');
+    assertEquals(contents.get('a'), 'aaaa');
+    assertEquals(contents.get('b'), '');
+    assert(!contents.has('c'));
+    assertEquals(contents.get('d'), 'dd<e>ee</e>DD');
+    assertEquals(contents.get('e'), 'ee');
+    assertEquals(contents.get('f'), 'ff<g/>FF');
+    assert(!contents.has('g'));
+    assertEquals(contents.get('h'), '  <i attr="ii">  </i> ');
+    assertEquals(contents.get('i'), '  ');
+    assert(contents.has('xml'));
+    assertEquals(contents.size, 8);
 });
 
 Deno.test('marshallEvent', () => {
