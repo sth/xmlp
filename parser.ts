@@ -123,7 +123,7 @@ export abstract class ParserBase implements XMLLocator {
     protected set chunk(chunk: string) {
         this._chunk = chunk;
         this._index = -1;
-        this._cx.collectInnerXMLAddChunk(chunk);
+        this._cx.innerXML?.addChunk(chunk);
     }
 
     protected hasNext(): boolean {
@@ -139,7 +139,7 @@ export abstract class ParserBase implements XMLLocator {
         } else {
             this._position.column += 1;
         }
-        this._cx.collectInnerXMLNext();
+        this._cx.innerXML?.advance();
         return c;
     }
 

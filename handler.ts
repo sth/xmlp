@@ -309,7 +309,7 @@ function emitInnerXML(cx: XMLParseContext): XMLParseEvent[] {
     let events: XMLParseEvent[] = [];
     const element = cx.peekElement()!;
     if (element.innerXMLToken !== null) {
-        const content = cx.collectInnerXMLEnd(element.innerXMLToken);
+        const content = cx.collectInnerXMLComplete(element.innerXMLToken);
         events = [['inner_xml', new ElementInfo(element), content]];
     }
     return events;

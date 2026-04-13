@@ -152,6 +152,14 @@ class InnerXMLState {
         this.data = data;
         this.dataIndex = dataIndex;
     }
+
+    addChunk(chunk: string) {
+        this.data += chunk;
+    }
+
+    advance() {
+        this.dataIndex += 1;
+    }
 }
 
 export class InnerXMLToken {
@@ -221,6 +229,10 @@ export class XMLParseContext {
         return this._namespaces[ns];
     }
 
+    get innerXML(): InnerXMLState | null {
+        return this._innerXML;
+    }
+
     collectInnerXMLStart(element: ElementInfo, chunk: string, index: number) {
         if (element.emptyElement) {
             // Self-closing elements don't have innerXML
@@ -242,9 +254,9 @@ export class XMLParseContext {
         parserElement.innerXMLToken = new InnerXMLToken(this._innerXML.dataIndex);
     }
 
-    collectInnerXMLEnd(token: InnerXMLToken): string {
+    collectInnerXMLComplete(token: InnerXMLToken): string {
         if (this._innerXML === null) {
-            throw new Error("collectInnerXMLEnd() without active collection");
+            throw new Error("collectInnerXMLComplete() without active collection");
         }
         // At the current position `this._innerXML.dataIndex` we have already read
         // the closing tag. That tag shouldn't be incuded in innerXML and we have
@@ -259,19 +271,6 @@ export class XMLParseContext {
             this._innerXML = null;
         }
         return collected;
-    }
-
-    collectInnerXMLAddChunk(chunk: string): void {
-        if (this._innerXML !== null) {
-            this._innerXML.data += chunk;
-        }
-    }
-
-    collectInnerXMLNext() {
-        if (this._innerXML === null) {
-            return;
-        }
-        this._innerXML.dataIndex += 1;
     }
 }
 
