@@ -8,7 +8,6 @@ import {
 
 import {
     ElementInfo,
-    CollectionToken,
     XMLParseContext,
     XMLParseEvent,
     XMLParseError,
@@ -204,7 +203,7 @@ Deno.test('SAXParser entity resolution', () => {
     assertEquals(flag_attr, true);
 });
 
-Deno.test('SAXParser input collection', () => {
+Deno.test('SAXParser innerXML collection', () => {
     const parser = new SAXParser();
     const contents = new Map<string, string>();
     parser.on('start_element', (element) => {
@@ -238,7 +237,7 @@ Deno.test('SAXParser input collection', () => {
     assertEquals(contents.size, 8);
 });
 
-Deno.test('SAXParser chunked input collection', async () => {
+Deno.test('SAXParser innerXML collection with chunked data', async () => {
     const parser = new SAXParser();
     const contents = new Map<string, string>();
     parser.on('start_element', (element) => {

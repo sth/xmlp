@@ -43,7 +43,7 @@ export class Element extends QName {
     private _attributes: Attribute[] = [];
     private _parent?: Element;
 
-    innerXMLToken: CollectionToken | null = null;
+    innerXMLToken: InnerXMLToken | null = null;
 
     uri?: string;
     emptyElement = false;
@@ -143,7 +143,7 @@ export interface XMLLocator {
     position: XMLPosition;
 }
 
-class CollectionState {
+class InnerXMLState {
     pending: number = 0;
     data: string;
     dataIndex: number;
@@ -154,7 +154,7 @@ class CollectionState {
     }
 }
 
-export class CollectionToken {
+export class InnerXMLToken {
     readonly startOffset: number;
 
     constructor(startOffset: number) {
@@ -167,7 +167,7 @@ export class XMLParseContext {
     private _memento = '';
     private _elementStack: Element[] = [];
     private _namespaces: { [ns: string]: string | undefined } = {};
-    private _collect: CollectionState | null = null;
+    private _innerXML: InnerXMLState | null = null;
 
     quote: '' | '"' | '\'' = '';
     state = 'BEFORE_DOCUMENT';
@@ -226,8 +226,8 @@ export class XMLParseContext {
             // Self-closing elements don't have innerXML
             return;
         }
-        if (this._collect === null) {
-            this._collect = new CollectionState(chunk, index);
+        if (this._innerXML === null) {
+            this._innerXML = new InnerXMLState(chunk, index);
         }
         const parserElement = this.peekElement();
         if (parserElement === undefined) {
@@ -237,33 +237,33 @@ export class XMLParseContext {
             // Already collecting, ignore duplicate call
             return;
         }
-        this._collect.pending += 1;
-        parserElement.innerXMLToken = new CollectionToken(this._collect.dataIndex);
+        this._innerXML.pending += 1;
+        parserElement.innerXMLToken = new InnerXMLToken(this._innerXML.dataIndex);
     }
 
-    collectEnd(token: CollectionToken): string {
-        if (this._collect === null) {
-            throw new Error("collectEnd() without active collection");
+    collectInnerXMLEnd(token: InnerXMLToken): string {
+        if (this._innerXML === null) {
+            throw new Error("collectInnerXMLEnd() without active collection");
         }
-        const collectedThis = this._collect.data.substring(token.startOffset, this._collect.dataIndex);
-        this._collect.pending -= 1;
-        if (this._collect.pending === 0) {
-            this._collect = null;
+        const collectedThis = this._innerXML.data.substring(token.startOffset, this._innerXML.dataIndex);
+        this._innerXML.pending -= 1;
+        if (this._innerXML.pending === 0) {
+            this._innerXML = null;
         }
         return collectedThis;
     }
 
-    collectAddChunk(chunk: string): void {
-        if (this._collect !== null) {
-            this._collect.data += chunk;
+    collectInnerXMLAddChunk(chunk: string): void {
+        if (this._innerXML !== null) {
+            this._innerXML.data += chunk;
         }
     }
 
-    collectNext() {
-        if (this._collect === null) {
+    collectInnerXMLNext() {
+        if (this._innerXML === null) {
             return;
         }
-        this._collect.dataIndex += 1;
+        this._innerXML.dataIndex += 1;
     }
 }
 

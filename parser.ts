@@ -8,7 +8,6 @@ import {
     XMLLocator,
     XMLPosition,
     ElementInfo,
-    CollectionToken,
 } from './context.ts';
 
 import {
@@ -124,7 +123,7 @@ export abstract class ParserBase implements XMLLocator {
     protected set chunk(chunk: string) {
         this._chunk = chunk;
         this._index = -1;
-        this._cx.collectAddChunk(chunk);
+        this._cx.collectInnerXMLAddChunk(chunk);
     }
 
     protected hasNext(): boolean {
@@ -140,7 +139,7 @@ export abstract class ParserBase implements XMLLocator {
         } else {
             this._position.column += 1;
         }
-        this._cx.collectNext();
+        this._cx.collectInnerXMLNext();
         return c;
     }
 

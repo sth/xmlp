@@ -309,7 +309,7 @@ function emitInnerXML(cx: XMLParseContext): XMLParseEvent[] {
     let events: XMLParseEvent[] = [];
     const element = cx.peekElement()!;
     if (element.innerXMLToken !== null) {
-        const collected = cx.collectEnd(element.innerXMLToken);
+        const collected = cx.collectInnerXMLEnd(element.innerXMLToken);
         // `collected` contains the closing tag, which needs to be removed
         const closingTagStart = collected.lastIndexOf('<');
         if (closingTagStart === -1) {
