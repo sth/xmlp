@@ -271,6 +271,16 @@ Deno.test('SAXParser innerXML collection with chunked data', async () => {
     assertEquals(contents.size, 8);
 });
 
+Deno.test('SAXParser white space handling', () => {
+    const parser = new SAXParser();
+    const expectedTexts = [' ', ' a ', '  ', '   '];
+    parser.on('text', (text) => {
+        assertEquals(text, expectedTexts.shift());
+    });
+    parser.parse('<xml> <a> a </a>  <b/>   </xml>');
+    assertEquals(expectedTexts.length, 0);
+});
+
 Deno.test('marshallEvent', () => {
     class TestParser extends PullParser {
         override marshallEvent(event: XMLParseEvent): PullResult {
