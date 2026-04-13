@@ -39,6 +39,14 @@ export class Attribute extends QName {
     }
 }
 
+class InnerXMLToken {
+    readonly startOffset: number;
+
+    constructor(startOffset: number) {
+        this.startOffset = startOffset;
+    }
+}
+
 export class Element extends QName {
     private _attributes: Attribute[] = [];
     private _parent?: Element;
@@ -159,14 +167,6 @@ class InnerXMLState {
 
     advance() {
         this.dataIndex += 1;
-    }
-}
-
-export class InnerXMLToken {
-    readonly startOffset: number;
-
-    constructor(startOffset: number) {
-        this.startOffset = startOffset;
     }
 }
 
