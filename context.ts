@@ -221,8 +221,8 @@ export class XMLParseContext {
         return this._namespaces[ns];
     }
 
-    collectInnerXMLStart(element_: ElementInfo, chunk: string, index: number) {
-        if (element_.emptyElement) {
+    collectInnerXMLStart(element: ElementInfo, chunk: string, index: number) {
+        if (element.emptyElement) {
             // Self-closing elements don't have innerXML
             return;
         }
@@ -233,6 +233,7 @@ export class XMLParseContext {
         if (parserElement === undefined) {
             throw new Error('No current element');
         }
+        // TODO: Make sure `parserElement` is `element._element`.
         if (parserElement.innerXMLToken !== null) {
             // Already collecting, ignore duplicate call
             return;
