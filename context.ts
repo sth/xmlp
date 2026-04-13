@@ -245,12 +245,19 @@ export class XMLParseContext {
         if (this._innerXML === null) {
             throw new Error("collectInnerXMLEnd() without active collection");
         }
-        const collectedThis = this._innerXML.data.substring(token.startOffset, this._innerXML.dataIndex);
+        // At the current position `this._innerXML.dataIndex` we have already read
+        // the closing tag. That tag shouldn't be incuded in innerXML and we have
+        // to remove it.
+        const closingTagStart = this._innerXML.data.lastIndexOf('<', this._innerXML.dataIndex);
+        if (closingTagStart < token.startOffset) {
+            throw new XMLParseError(`Closing tag missing in innerXML fragment: ${this._innerXML.data.substring(token.startOffset, this._innerXML.dataIndex)}`, this);
+        }
+        const collected = this._innerXML.data.substring(token.startOffset, closingTagStart);
         this._innerXML.pending -= 1;
         if (this._innerXML.pending === 0) {
             this._innerXML = null;
         }
-        return collectedThis;
+        return collected;
     }
 
     collectInnerXMLAddChunk(chunk: string): void {

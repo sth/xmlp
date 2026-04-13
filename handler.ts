@@ -309,13 +309,8 @@ function emitInnerXML(cx: XMLParseContext): XMLParseEvent[] {
     let events: XMLParseEvent[] = [];
     const element = cx.peekElement()!;
     if (element.innerXMLToken !== null) {
-        const collected = cx.collectInnerXMLEnd(element.innerXMLToken);
-        // `collected` contains the closing tag, which needs to be removed
-        const closingTagStart = collected.lastIndexOf('<');
-        if (closingTagStart === -1) {
-            throw new XMLParseError(`Closing tag missing in innerXML fragment: ${collected}`, cx);
-        }
-        events = [['inner_xml', new ElementInfo(element), collected.substring(0, closingTagStart)]];
+        const content = cx.collectInnerXMLEnd(element.innerXMLToken);
+        events = [['inner_xml', new ElementInfo(element), content]];
     }
     return events;
 }
