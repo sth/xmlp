@@ -221,6 +221,7 @@ Deno.test('SAXParser innerXML collection', () => {
             <d>dd<e>ee</e>DD</d>
             <f>ff<g/>FF</f>
             <h>  <i attr="ii">  </i> </h>
+            <j>t1</j><k>t2</k><l/><m>t3</m>
         </xml>`
         );
 
@@ -233,8 +234,15 @@ Deno.test('SAXParser innerXML collection', () => {
     assert(!contents.has('g'));
     assertEquals(contents.get('h'), '  <i attr="ii">  </i> ');
     assertEquals(contents.get('i'), '  ');
+
+    // Test tags without spaces between
+    assertEquals(contents.get('j'), 't1');
+    assertEquals(contents.get('k'), 't2');
+    assert(!contents.has('l'));
+    assertEquals(contents.get('m'), 't3');
+
     assert(contents.has('xml'));
-    assertEquals(contents.size, 8);
+    assertEquals(contents.size, 11);
 });
 
 Deno.test('SAXParser innerXML collection with chunked data', async () => {

@@ -261,7 +261,8 @@ export class XMLParseContext {
         // At the current position `this._innerXML.dataIndex` we have already read
         // the closing tag. That tag shouldn't be incuded in innerXML and we have
         // to remove it.
-        const closingTagStart = this._innerXML.data.lastIndexOf('<', this._innerXML.dataIndex);
+        // `dataIndex` points to the character after the end of the closing tag.
+        const closingTagStart = this._innerXML.data.lastIndexOf('<', this._innerXML.dataIndex-1);
         if (closingTagStart < token.startOffset) {
             throw new XMLParseError(`Closing tag missing in innerXML fragment: ${this._innerXML.data.substring(token.startOffset, this._innerXML.dataIndex)}`, this);
         }
