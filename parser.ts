@@ -134,8 +134,9 @@ export abstract class ParserBase implements XMLLocator {
             // but we need to do this anyway to make sure readNext() can read a character.
             if (this._chunk[this._index+1] === '\n') {
                 this._index += 1;
-                this._rn_started = false;
             }
+            // We have now handled \r\n, if there was anything to handle
+            this._rn_started = false;
         }
         return this._index < this._chunk.length - 1;
     }
