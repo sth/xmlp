@@ -281,11 +281,17 @@ Deno.test('SAXParser innerXML collection with chunked data', async () => {
 
 Deno.test('SAXParser white space handling', () => {
     const parser = new SAXParser();
-    const expectedTexts = [' ', ' a ', '  ', '   '];
+    const expectedTexts = [' ', ' a ', '  ', '   ', '1a\nb', '2a\nb', '3\r'];
+    const expectedAttributes = ["fx y", "gx\r\ny"];
     parser.on('text', (text) => {
         assertEquals(text, expectedTexts.shift());
     });
-    parser.parse('<xml> <a> a </a>  <b/>   </xml>');
+    parser.on('start_element', (element) => {
+        for (const attribute of element.attributes) {
+            assertEquals(attribute.value, expectedAttributes.shift());
+        }
+    });
+    parser.parse('<xml> <a> a </a>  <b/>   <c><![CDATA[1a\r\nb]]></c><d>2a\rb</d><e>3&#13;</e><f f="fx\r\ny"/><g g="gx&#13;&#10;y"/></xml>');
     assertEquals(expectedTexts.length, 0);
 });
 
