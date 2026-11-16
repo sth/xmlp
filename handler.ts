@@ -18,6 +18,11 @@ function isQuote(c: string): c is ('"' | '\'') {
     return c === '"' || c === '\'';
 }
 
+// Tabs and newlines in attibute values are supposed to be normalized to spaces
+export function normalizeAttributeWhitespace(text: string): string {
+    return text.replaceAll(/[\n\t]/g, ' ');
+}
+
 const simpleEntities = new Map<string, string>([
     [ 'amp', '&' ],
     [ 'gt', '>' ],
@@ -396,7 +401,7 @@ export function handleAttributeValueStart(cx: XMLParseContext, c: string): XMLPa
     if (c === cx.quote) {
         const value = cx.memento;
         cx.clearMemento();
-        cx.peekElement()!.peekAttribute()!.value = resolveEntity(value);
+        cx.peekElement()!.peekAttribute()!.value = resolveEntity(normalizeAttributeWhitespace(value));
         cx.quote = '';
         cx.state = 'ATTRIBUTE_VALUE_END';
     } else {

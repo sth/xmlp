@@ -42,6 +42,7 @@ export abstract class ParserBase implements XMLLocator {
     private _handlers: { [state: string]: XMLParseHandler } = {};
     private _chunk = '';
     private _index = -1;
+    private _rn_started = false;
     private _position: XMLPosition = { line: 1, column: 0 };
 
     collectInnerXML(element: ElementInfo): void {
@@ -127,12 +128,27 @@ export abstract class ParserBase implements XMLLocator {
     }
 
     protected hasNext(): boolean {
+        if (this._rn_started && this._index < this._chunk.length - 1) {
+            // There is a next character. If it is \n, it is part of a \r\n and needs to be skipped.
+            // Skipping it here only works if we always call hasNext() before readNext(),
+            // but we need to do this anyway to make sure readNext() can read a character.
+            if (this._chunk[this._index+1] === '\n') {
+                this._index += 1;
+                this._rn_started = false;
+            }
+        }
         return this._index < this._chunk.length - 1;
     }
 
     protected readNext(): string {
         this._index += 1;
-        const c = this._chunk[this._index];
+        let c = this._chunk[this._index];
+        if (c === '\r') {
+            // Non-standard newline, normalize it
+            c = '\n';
+            // It might be part of a \r\n
+            this._rn_started = true;
+        }
         if (c === '\n') {
             this._position.line += 1;
             this._position.column = 0;
